@@ -8,11 +8,11 @@ export default {
 
 		if (request.method === 'POST' && url.pathname === '/api/sessions') {
 			try {
-				const { id, title, duration_mins, window_start, window_end, timer_deadline } = await request.json() as any;
+				const { id, title, duration_mins, window_start, window_end, timer_deadline, interval_days = 7 } = await request.json() as any;
 				await env.DB.prepare(
-					`INSERT INTO sessions (id, title, duration_mins, window_start, window_end, timer_deadline)
-					 VALUES (?, ?, ?, ?, ?, ?)`
-				).bind(id, title, duration_mins, window_start, window_end, timer_deadline).run();
+					`INSERT INTO sessions (id, title, duration_mins, window_start, window_end, timer_deadline, interval_days)
+					 VALUES (?, ?, ?, ?, ?, ?, ?)`
+				).bind(id, title, duration_mins, window_start, window_end, timer_deadline, interval_days).run();
 				return new Response(JSON.stringify({ success: true }), { status: 201 });
 			} catch (e: any) {
 				return new Response(JSON.stringify({ error: e.message }), { status: 400 });
@@ -63,7 +63,7 @@ export default {
 			}
 
 			for (const session of expiredSessions) {
-				console.log(`Processing expired session: ${session.id}`);
+				console.log(`Processing expired session: ${session.id} with interval ${session.interval_days} days`);
 
 				// 2. Fetch tokens for active participants in this session
 				const { results: sessionTokens } = await env.DB.prepare(
@@ -75,6 +75,7 @@ export default {
 
 				// 3. Algorithm Placeholder: Find intersection
 				console.log(`[Algorithm Placeholder] Executing intersection logic for session ${session.id} with ${sessionTokens.length} tokens.`);
+				console.log(`[Algorithm Placeholder] Search vector T increment step is ${session.interval_days} days.`);
 
 				// Simulate finding intersection or failing
 				const isSuccess = Math.random() > 0.5;
