@@ -5,25 +5,25 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "mandatory-rest",
-	"main": "src/index.ts",
+	"main": "src/worker.ts",
 	"compatibility_date": "2026-05-16",
 	"observability": {
-		"enabled": true
+		"enabled": true,
 	},
 	"triggers": {
-		"crons": [
-			"* * * * *"
-		]
+		"crons": ["* * * * *"],
 	},
 	"upload_source_maps": true,
-	"compatibility_flags": [
-		"nodejs_compat"
-	],
+	"compatibility_flags": ["nodejs_compat"],
 	"d1_databases": [
 		{
 			"binding": "DB",
 			"database_name": "mandatory_rest_db",
-			"database_id": "00000000-0000-0000-0000-000000000000"
-		}
-	]
+			"database_id": "00000000-0000-0000-0000-000000000000",
+		},
+	],
+	"assets": {
+		"directory": "./dist",
+		"binding": "ASSETS",
+	},
 }

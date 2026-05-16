@@ -1,0 +1,54 @@
+---
+import '../../global.css';
+
+const { id } = Astro.params;
+const db = Astro.locals.runtime.env.DB;
+
+// Query the database directly on the edge before rendering the HTML
+const session = await db.prepare("SELECT * FROM sessions WHERE id = ?").bind(id).first();
+const participants = await db.prepare("SELECT email FROM participants WHERE session_id = ?").bind(id).all();
+
+if (!session) {
+  return Astro.redirect('/404'); // Trap doesn't exist or already self-destructed
+}
+---
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{session.title} | mandatory.rest</title>
+</head>
+<body class="bg-black text-white font-pixel p-6 min-h-screen flex items-center justify-center">
+    <main class="max-w-xl w-full border-4 border-red-600 bg-black p-8 shadow-[8px_8px_0_0_rgba(220,38,38,1)]">
+        <div class="border-b-4 border-red-900 pb-4 mb-6">
+            <h1 class="text-3xl font-black uppercase text-red-500 drop-shadow-[2px_2px_0_rgba(100,0,0,1)]">{session.title}</h1>
+            <p class="text-xs text-gray-500 mt-2">> DURATION: {session.duration_mins} MINS</p>
+        </div>
+
+        <div class="my-8 p-6 border-4 border-red-900 bg-red-950/20 text-center">
+            <p class="text-xs uppercase tracking-widest text-red-400 mb-2 animate-pulse">Ticking Down To Execution</p>
+            <p class="text-2xl font-bold text-white tracking-widest">{session.timer_deadline}</p>
+        </div>
+
+        <div class="mb-8">
+            <h3 class="text-xs font-bold uppercase text-gray-400 mb-4 border-b-2 border-gray-800 pb-2">Locked In [{participants.results.length}]:</h3>
+            <ul class="space-y-2">
+                {participants.results.map((p: any) => (
+                    <li class="text-sm text-green-400 flex items-center gap-2">
+                        <span class="text-xs">[✓]</span> {p.email}
+                    </li>
+                ))}
+                {participants.results.length === 0 && (
+                    <li class="text-sm text-gray-600 italic">No one has submitted tokens yet...</li>
+                )}
+            </ul>
+        </div>
+
+        <!-- Tiny, isolated interactive button for the OAuth flow -->
+        <a href={`/api/auth/login?session=${id}`} class="block w-full text-center bg-white hover:bg-gray-200 text-black font-bold p-4 border-b-4 border-gray-400 hover:border-gray-200 hover:translate-y-[2px] transition-all uppercase tracking-widest">
+            [ Connect Calendar ]
+        </a>
+    </main>
+</body>
+</html>
