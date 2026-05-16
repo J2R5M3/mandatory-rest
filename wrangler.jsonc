@@ -5,7 +5,7 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "mandatory-rest",
-	"main": "src/index.ts",
+	"main": "src/worker.ts",
 	"compatibility_date": "2026-05-16",
 	"vars": {
 		//public identifiers
@@ -24,7 +24,10 @@
 		{
 			"binding": "DB",
 			"database_name": "mandatory_rest_db",
-			"database_id": "5ba99acf-cef4-46ed-8bd3-314b85b29f23",
-		},
+      "database_id": "5ba99acf-cef4-46ed-8bd3-314b85b29f23",		},
 	],
+	"assets": {
+		"directory": "./dist",
+		"binding": "ASSETS",
+	},
 }
