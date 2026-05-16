@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     window_start TEXT,
     window_end TEXT,
     timer_deadline TEXT,
+    interval_days INTEGER DEFAULT 7,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 

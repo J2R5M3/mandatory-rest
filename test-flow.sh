@@ -15,7 +15,8 @@ curl -X POST http://localhost:8787/api/sessions \
        "duration_mins": 120,
        "window_start": "2024-10-01T18:00:00Z",
        "window_end": "2024-10-01T22:00:00Z",
-       "timer_deadline": "1970-01-01T00:00:00Z"
+       "timer_deadline": "1970-01-01T00:00:00Z",
+       "interval_days": 14
      }'
 
 echo -e "\n\n${GREEN}2. Adding a Participant...${NC}"
