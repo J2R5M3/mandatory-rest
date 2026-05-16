@@ -1,0 +1,24 @@
+
+> mandatory-rest@0.0.0 dev
+> wrangler dev --test-scheduled
+
+
+ ⛅️ wrangler 4.92.0
+───────────────────
+
+Cloudflare collects anonymous telemetry about your usage of Wrangler. Learn more at https://github.com/cloudflare/workers-sdk/tree/main/packages/wrangler/telemetry.md
+Your Worker has access to the following bindings:
+Binding                         Resource         Mode
+env.DB (mandatory_rest_db)      D1 Database      local
+
+⎔ Starting local server...
+[wrangler:info] Ready on http://localhost:8787
+[wrangler:info] POST /api/sessions 201 Created (21ms)
+[wrangler:info] POST /api/participants 201 Created (10ms)
+[wrangler:info] POST /api/tokens 201 Created (7ms)
+Cron fired at * * * * *, time: 1778952651066
+Processing expired session: session-123
+[Algorithm Placeholder] Executing intersection logic for session session-123 with 1 tokens.
+[Failure Path] Hit 90-Day Wall. Dispatching cheerful despair mail to participants.
+Purging session: session-123
+[wrangler:info] GET /__scheduled 200 OK (33ms)
