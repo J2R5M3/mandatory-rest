@@ -3,7 +3,7 @@
 	"version": "0.0.0",
 	"private": true,
 	"scripts": {
-		"build": "astro build",
+		"build": "astro build && cp .assetsignore dist/.assetsignore",
 		"deploy": "npm run build && wrangler deploy",
 		"dev": "astro dev",
 		"start": "wrangler dev --test-scheduled",
