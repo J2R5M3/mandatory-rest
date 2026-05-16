@@ -11,7 +11,7 @@
 		//public identifiers
 		"GOOGLE_CLIENT_ID": "10095119539-rt6pr0oa6bg9m5p0jdk3pus881mdug4t.apps.googleusercontent.com",
 		"MICROSOFT_CLIENT_ID": "azuer id"
-	}
+	},
 	"observability": {
 		"enabled": true,
 	},
