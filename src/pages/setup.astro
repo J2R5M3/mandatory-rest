@@ -1,0 +1,117 @@
+---
+import '../global.css';
+---
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Setup Trap | mandatory.rest</title>
+</head>
+<body class="bg-black text-green-400 font-pixel min-h-screen flex items-center justify-center p-4">
+    <main class="max-w-2xl w-full border-4 border-green-500 p-8 shadow-[8px_8px_0_0_rgba(34,197,94,1)]">
+        <h1 class="text-3xl font-bold mb-6 text-center uppercase tracking-widest drop-shadow-[4px_4px_0_rgba(0,100,0,1)]">
+            Configure Trap
+        </h1>
+
+        <form id="organize-form" class="space-y-4 text-sm">
+            <div class="flex flex-col">
+                <label class="mb-1 text-green-300 uppercase">Title</label>
+                <input type="text" name="title" required placeholder="e.g. Dinner Trap" class="bg-black border-2 border-green-500 text-green-400 p-2 focus:outline-none focus:border-green-300" />
+            </div>
+
+            <div class="flex flex-col">
+                <label class="mb-1 text-green-300 uppercase">Duration (mins)</label>
+                <input type="number" name="duration_mins" value="120" required class="bg-black border-2 border-green-500 text-green-400 p-2 focus:outline-none focus:border-green-300" />
+            </div>
+
+            <div class="flex flex-col">
+                <label class="mb-1 text-green-300 uppercase">Search Window Start</label>
+                <input type="datetime-local" id="window_start" name="window_start" required class="bg-black border-2 border-green-500 text-green-400 p-2 focus:outline-none focus:border-green-300" />
+            </div>
+
+            <div class="flex flex-col">
+                <label class="mb-1 text-green-300 uppercase">Search Window End</label>
+                <input type="datetime-local" id="window_end" name="window_end" required class="bg-black border-2 border-green-500 text-green-400 p-2 focus:outline-none focus:border-green-300" />
+            </div>
+
+            <div class="flex flex-col">
+                <label class="mb-1 text-green-300 uppercase">Interval Search Steps (Days)</label>
+                <input type="number" name="interval_days" value="7" required class="bg-black border-2 border-green-500 text-green-400 p-2 focus:outline-none focus:border-green-300" />
+            </div>
+
+            <div class="flex flex-col">
+                <label class="mb-1 text-green-300 uppercase">Deadline to lock in</label>
+                <input type="datetime-local" id="timer_deadline" name="timer_deadline" required class="bg-black border-2 border-green-500 text-green-400 p-2 focus:outline-none focus:border-green-300" />
+            </div>
+
+            <div class="mt-8 pt-6 flex justify-center">
+                <button type="submit" class="w-full bg-green-500 hover:bg-green-400 text-black font-bold py-4 px-8 border-b-4 border-green-700 hover:border-green-500 hover:translate-y-[2px] transition-all uppercase tracking-wider">
+                    [ Generate Link ]
+                </button>
+            </div>
+        </form>
+
+        <script>
+            // Utility to format Date to YYYY-MM-DDThh:mm (local)
+            const formatLocal = (d) => {
+                const pad = n => n.toString().padStart(2, '0');
+                return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+            };
+
+            // Calculate defaults
+            const now = new Date();
+
+            // Deadline 6 hours from now
+            const deadline = new Date(now.getTime() + 6 * 60 * 60 * 1000);
+            document.getElementById('timer_deadline').value = formatLocal(deadline);
+
+            // Nearest weekend (Friday 6pm to Sunday 10pm)
+            // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
+            const dayOfWeek = now.getDay();
+            let daysToFriday = (5 - dayOfWeek + 7) % 7;
+            if (daysToFriday === 0 && now.getHours() >= 18) {
+                daysToFriday = 7; // Next Friday if it's already past 6pm Friday
+            }
+
+            const nextFriday = new Date(now.getTime() + daysToFriday * 24 * 60 * 60 * 1000);
+            nextFriday.setHours(18, 0, 0, 0); // 6 PM
+            document.getElementById('window_start').value = formatLocal(nextFriday);
+
+            const nextSunday = new Date(nextFriday.getTime() + 2 * 24 * 60 * 60 * 1000);
+            nextSunday.setHours(22, 0, 0, 0); // 10 PM
+            document.getElementById('window_end').value = formatLocal(nextSunday);
+
+
+            document.getElementById('organize-form')?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+
+                const sessionId = 'session-' + Date.now();
+                const payload = {
+                    id: sessionId,
+                    title: fd.get('title'),
+                    duration_mins: parseInt(fd.get('duration_mins')),
+                    window_start: new Date(fd.get('window_start')).toISOString(),
+                    window_end: new Date(fd.get('window_end')).toISOString(),
+                    interval_days: parseInt(fd.get('interval_days')),
+                    timer_deadline: new Date(fd.get('timer_deadline')).toISOString()
+                };
+
+                const res = await fetch('/api/sessions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    window.location.href = '/s/' + sessionId;
+                } else {
+                    const data = await res.json();
+                    alert('Failed to generate link: ' + data.error);
+                }
+            });
+        </script>
+    </main>
+</body>
+</html>
