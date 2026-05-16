@@ -1,40 +1,96 @@
-/**
- * Welcome to Cloudflare Workers!
- *
- * This is a template for a Scheduled Worker: a Worker that can run on a
- * configurable interval:
- * https://developers.cloudflare.com/workers/platform/triggers/cron-triggers/
- *
- * - Run `npm run dev` in your terminal to start a development server
- * - Run `curl "http://localhost:8787/__scheduled?cron=*+*+*+*+*"` to see your Worker in action
- * - Run `npm run deploy` to publish your Worker
- *
- * Bind resources to your Worker in `wrangler.jsonc`. After adding bindings, a type definition for the
- * `Env` object can be regenerated with `npm run cf-typegen`.
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
+export interface Env {
+	DB: D1Database;
+}
 
 export default {
-	async fetch(req) {
-		const url = new URL(req.url);
-		url.pathname = '/__scheduled';
-		url.searchParams.append('cron', '* * * * *');
-		return new Response(`To test the scheduled handler, ensure you have used the "--test-scheduled" then try running "curl ${url.href}".`);
+	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+		const url = new URL(request.url);
+
+		if (request.method === 'POST' && url.pathname === '/api/sessions') {
+			try {
+				const { id, title, duration_mins, window_start, window_end, timer_deadline } = await request.json() as any;
+				await env.DB.prepare(
+					`INSERT INTO sessions (id, title, duration_mins, window_start, window_end, timer_deadline)
+					 VALUES (?, ?, ?, ?, ?, ?)`
+				).bind(id, title, duration_mins, window_start, window_end, timer_deadline).run();
+				return new Response(JSON.stringify({ success: true }), { status: 201 });
+			} catch (e: any) {
+				return new Response(JSON.stringify({ error: e.message }), { status: 400 });
+			}
+		}
+
+		if (request.method === 'POST' && url.pathname === '/api/participants') {
+			try {
+				const { id, session_id, email } = await request.json() as any;
+				await env.DB.prepare(
+					`INSERT INTO participants (id, session_id, email)
+					 VALUES (?, ?, ?)`
+				).bind(id, session_id, email).run();
+				return new Response(JSON.stringify({ success: true }), { status: 201 });
+			} catch (e: any) {
+				return new Response(JSON.stringify({ error: e.message }), { status: 400 });
+			}
+		}
+
+		if (request.method === 'POST' && url.pathname === '/api/tokens') {
+			try {
+				const { id, participant_id, provider, refresh_token, is_primary } = await request.json() as any;
+				await env.DB.prepare(
+					`INSERT INTO tokens (id, participant_id, provider, refresh_token, is_primary)
+					 VALUES (?, ?, ?, ?, ?)`
+				).bind(id, participant_id, provider, refresh_token, is_primary).run();
+				return new Response(JSON.stringify({ success: true }), { status: 201 });
+			} catch (e: any) {
+				return new Response(JSON.stringify({ error: e.message }), { status: 400 });
+			}
+		}
+
+		return new Response('Not Found', { status: 404 });
 	},
 
-	// The scheduled handler is invoked at the interval set in our wrangler.jsonc's
-	// [[triggers]] configuration.
-	async scheduled(event, env, ctx): Promise<void> {
-		// A Cron Trigger can make requests to other endpoints on the Internet,
-		// publish to a Queue, query a D1 Database, and much more.
-		//
-		// We'll keep it simple and make an API call to a Cloudflare API:
-		let resp = await fetch('https://api.cloudflare.com/client/v4/ips');
-		let wasSuccessful = resp.ok ? 'success' : 'fail';
+	async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+		console.log(`Cron fired at ${event.cron}, time: ${event.scheduledTime}`);
 
-		// You could store this result in KV, write to a D1 Database, or publish to a Queue.
-		// In this template, we'll just log the result:
-		console.log(`trigger fired at ${event.cron}: ${wasSuccessful}`);
+		try {
+			// 1. Scan for expired sessions
+			const { results: expiredSessions } = await env.DB.prepare(
+				`SELECT * FROM sessions WHERE timer_deadline <= datetime('now')`
+			).all();
+
+			if (!expiredSessions || expiredSessions.length === 0) {
+				console.log('No expired sessions found.');
+				return;
+			}
+
+			for (const session of expiredSessions) {
+				console.log(`Processing expired session: ${session.id}`);
+
+				// 2. Fetch tokens for active participants in this session
+				const { results: sessionTokens } = await env.DB.prepare(
+					`SELECT t.*, p.email
+					 FROM tokens t
+					 JOIN participants p ON t.participant_id = p.id
+					 WHERE p.session_id = ?`
+				).bind(session.id).all();
+
+				// 3. Algorithm Placeholder: Find intersection
+				console.log(`[Algorithm Placeholder] Executing intersection logic for session ${session.id} with ${sessionTokens.length} tokens.`);
+
+				// Simulate finding intersection or failing
+				const isSuccess = Math.random() > 0.5;
+
+				if (isSuccess) {
+					console.log(`[Success Path] Found compliant time window. Injecting events to primary calendars.`);
+				} else {
+					console.log(`[Failure Path] Hit 90-Day Wall. Dispatching cheerful despair mail to participants.`);
+				}
+
+				// 4. Complete Ephemeral Purge (Cascade delete will remove participants and tokens)
+				console.log(`Purging session: ${session.id}`);
+				await env.DB.prepare(`DELETE FROM sessions WHERE id = ?`).bind(session.id).run();
+			}
+		} catch (error) {
+			console.error('Error executing cron trigger:', error);
+		}
 	},
-} satisfies ExportedHandler<Env>;
+};
