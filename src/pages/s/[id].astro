@@ -11,6 +11,12 @@ const participants = await db.prepare("SELECT email FROM participants WHERE sess
 if (!session) {
   return Astro.redirect('/404'); // Trap doesn't exist or already self-destructed
 }
+
+// Check cookies for user state
+const participantId = Astro.cookies.get(`participant_${id}`)?.value;
+const hasPrimary = Astro.cookies.get(`has_primary_${id}`)?.value === '1';
+const isLockedIn = Astro.cookies.get(`locked_in_${id}`)?.value === '1';
+
 ---
 
 <html lang="en">
@@ -45,10 +51,44 @@ if (!session) {
             </ul>
         </div>
 
-        <!-- Tiny, isolated interactive button for the OAuth flow -->
-        <a href={`/api/auth/login?session=${id}`} class="block w-full text-center bg-white hover:bg-gray-200 text-black font-bold p-4 border-b-4 border-gray-400 hover:border-gray-200 hover:translate-y-[2px] transition-all uppercase tracking-widest">
-            [ Connect Calendar ]
-        </a>
+        <!-- Conditional Interactive Elements Based on User State -->
+        {isLockedIn ? (
+            <div class="text-center p-4 border-4 border-green-600 bg-green-950/20">
+                <p class="text-green-400 font-bold uppercase tracking-widest">[ YOU ARE LOCKED IN ]</p>
+                <p class="text-xs text-green-600 mt-2">Awaiting system execution...</p>
+            </div>
+        ) : !hasPrimary ? (
+            <div class="space-y-4">
+                <p class="text-xs text-gray-400 text-center uppercase">Connect Primary Calendar</p>
+                <a href={`/api/auth/login?session=${id}&provider=google&is_primary=1`} class="block w-full text-center bg-white hover:bg-gray-200 text-black font-bold p-4 border-b-4 border-gray-400 hover:border-gray-200 hover:translate-y-[2px] transition-all uppercase tracking-widest">
+                    [ Connect Google ]
+                </a>
+                <a href={`/api/auth/login?session=${id}&provider=microsoft&is_primary=1`} class="block w-full text-center bg-blue-600 hover:bg-blue-500 text-white font-bold p-4 border-b-4 border-blue-800 hover:border-blue-600 hover:translate-y-[2px] transition-all uppercase tracking-widest mt-4">
+                    [ Connect Microsoft ]
+                </a>
+            </div>
+        ) : (
+            <div class="space-y-6">
+                <div class="p-4 border-2 border-dashed border-gray-700">
+                    <p class="text-xs text-gray-400 text-center uppercase mb-4">Add Auxiliary Conflict Calendars (Optional)</p>
+                    <div class="flex gap-4">
+                        <a href={`/api/auth/login?session=${id}&provider=google&is_primary=0`} class="flex-1 text-center bg-gray-800 hover:bg-gray-700 text-white text-xs font-bold p-3 border-b-4 border-gray-900 transition-all uppercase">
+                            + Google
+                        </a>
+                        <a href={`/api/auth/login?session=${id}&provider=microsoft&is_primary=0`} class="flex-1 text-center bg-blue-900 hover:bg-blue-800 text-white text-xs font-bold p-3 border-b-4 border-blue-950 transition-all uppercase">
+                            + Microsoft
+                        </a>
+                    </div>
+                </div>
+
+                <form action="/api/sessions/lockin" method="POST">
+                    <input type="hidden" name="session_id" value={id} />
+                    <button type="submit" class="w-full text-center bg-red-600 hover:bg-red-500 text-white font-bold p-4 border-b-4 border-red-800 hover:border-red-600 hover:translate-y-[2px] transition-all uppercase tracking-widest">
+                        [ Lock In Now ]
+                    </button>
+                </form>
+            </div>
+        )}
     </main>
 </body>
 </html>
