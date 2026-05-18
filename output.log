@@ -15,13 +15,13 @@ env.MICROSOFT_CLIENT_ID ("azuer id")                                      Enviro
 ❓ Your types might be out of date. Re-run `wrangler types` to ensure your types are correct.
 ⎔ Starting local server...
 [wrangler:info] Ready on http://localhost:8787
-[wrangler:info] POST /api/sessions 201 Created (31ms)
-[wrangler:info] POST /api/participants 201 Created (8ms)
-[wrangler:info] POST /api/tokens 201 Created (7ms)
-Cron fired at * * * * *, time: 1779138838376
+[wrangler:info] POST /api/sessions 201 Created (30ms)
+[wrangler:info] POST /api/participants 201 Created (9ms)
+[wrangler:info] POST /api/tokens 201 Created (8ms)
+Cron fired at * * * * *, time: 1779139070856
 Processing expired session: session-123 with interval 14 days
 [Algorithm Placeholder] Executing intersection logic for session session-123 with 1 tokens.
 [Algorithm Placeholder] Search vector T increment step is 14 days.
 [Failure Path] Hit 90-Day Wall. Dispatching cheerful despair mail to participants.
 Purging session: session-123
-[wrangler:info] GET /__scheduled 200 OK (20ms)
+[wrangler:info] GET /__scheduled 200 OK (19ms)
