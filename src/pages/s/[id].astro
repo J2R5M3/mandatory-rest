@@ -17,6 +17,19 @@ const participantId = Astro.cookies.get(`participant_${id}`)?.value;
 const hasPrimary = Astro.cookies.get(`has_primary_${id}`)?.value === '1';
 const isLockedIn = Astro.cookies.get(`locked_in_${id}`)?.value === '1';
 
+// Fetch tokens for the current participant
+let participantTokens: any[] = [];
+let primaryToken = null;
+let auxiliaryTokens: any[] = [];
+if (participantId) {
+  participantTokens = (await db.prepare("SELECT * FROM tokens WHERE participant_id = ?").bind(participantId).all()).results;
+  primaryToken = participantTokens.find(t => t.is_primary === 1);
+  auxiliaryTokens = participantTokens.filter(t => t.is_primary === 0);
+}
+
+// Instead of relying strictly on cookie, fall back to db check for primary
+const actuallyHasPrimary = hasPrimary || !!primaryToken;
+
 ---
 
 <html lang="en">
@@ -57,7 +70,7 @@ const isLockedIn = Astro.cookies.get(`locked_in_${id}`)?.value === '1';
                 <p class="text-green-400 font-bold uppercase tracking-widest">[ YOU ARE LOCKED IN ]</p>
                 <p class="text-xs text-green-600 mt-2">Awaiting system execution...</p>
             </div>
-        ) : !hasPrimary ? (
+        ) : !actuallyHasPrimary ? (
             <div class="space-y-4">
                 <p class="text-xs text-gray-400 text-center uppercase">Connect Primary Calendar</p>
                 <a href={`/api/auth/login?session=${id}&provider=google&is_primary=1`} class="block w-full text-center bg-white hover:bg-gray-200 text-black font-bold p-4 border-b-4 border-gray-400 hover:border-gray-200 hover:translate-y-[2px] transition-all uppercase tracking-widest">
@@ -69,6 +82,22 @@ const isLockedIn = Astro.cookies.get(`locked_in_${id}`)?.value === '1';
             </div>
         ) : (
             <div class="space-y-6">
+                <div class="p-4 border-2 border-solid border-green-700 bg-green-950/10 mb-4">
+                    <p class="text-xs text-green-400 font-bold uppercase mb-2">Connected Accounts</p>
+                    <ul class="space-y-1">
+                        {primaryToken && (
+                            <li class="text-sm text-white flex items-center gap-2">
+                                <span class="text-xs text-green-500">[Primary]</span> {primaryToken.provider}
+                            </li>
+                        )}
+                        {auxiliaryTokens.map((t: any) => (
+                            <li class="text-sm text-gray-300 flex items-center gap-2">
+                                <span class="text-xs text-gray-500">[Aux]</span> {t.provider}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
                 <div class="p-4 border-2 border-dashed border-gray-700">
                     <p class="text-xs text-gray-400 text-center uppercase mb-4">Add Auxiliary Conflict Calendars (Optional)</p>
                     <div class="flex gap-4">
