@@ -18,7 +18,10 @@ export const GET: APIRoute = async ({ request, locals, redirect, cookies }) => {
 	}
 
 	const { sessionId, provider, isPrimary } = stateObj;
-	const redirectUri = new URL('/api/auth/callback', url.origin).toString();
+	const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || url.host;
+	const protocol = request.headers.get('x-forwarded-proto') || (url.protocol.includes('https') ? 'https' : 'http');
+	const origin = `${protocol}://${host}`;
+	const redirectUri = new URL('/api/auth/callback', origin).toString();
 
 	let refreshToken = '';
 	let email = '';

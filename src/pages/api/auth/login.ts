@@ -10,7 +10,11 @@ export const GET: APIRoute = async ({ request, redirect, locals }) => {
 		return new Response('Missing session or provider parameter', { status: 400 });
 	}
 
-	const redirectUri = new URL('/api/auth/callback', url.origin).toString();
+	// Handle proxied requests in production where url.origin might be incorrect
+	const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || url.host;
+	const protocol = request.headers.get('x-forwarded-proto') || (url.protocol.includes('https') ? 'https' : 'http');
+	const origin = `${protocol}://${host}`;
+	const redirectUri = new URL('/api/auth/callback', origin).toString();
 
 	// Create state object to pass context to the callback
 	const stateObj = {
