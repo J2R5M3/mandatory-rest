@@ -1,38 +1,11 @@
-export async function scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
-	console.log(`Cron fired at ${event.cron}, time: ${event.scheduledTime}`);
+const fs = require('fs');
 
-	try {
-		// 1. Scan for expired sessions
-		const { results: expiredSessions } = await env.DB.prepare(`SELECT * FROM sessions WHERE timer_deadline <= datetime('now')`).all();
+const path = 'src/cron.ts';
+let content = fs.readFileSync(path, 'utf8');
 
-		if (!expiredSessions || expiredSessions.length === 0) {
-			console.log('No expired sessions found.');
-			return;
-		}
-
-		for (const session of expiredSessions as any[]) {
-			console.log(`Processing expired session: ${session.id} with interval ${session.interval_days} days`);
-
-			// 2. Fetch tokens for active participants in this session
-			const { results: sessionTokens } = await env.DB.prepare(
-				`SELECT t.*, p.email
-                 FROM tokens t
-                 JOIN participants p ON t.participant_id = p.id
-                 WHERE p.session_id = ?`,
-			)
-				.bind(session.id)
-				.all();
-
-			// 3. Algorithm Placeholder: Find intersection
-			console.log(`[Algorithm Placeholder] Executing intersection logic for session ${session.id} with ${sessionTokens.length} tokens.`);
-			console.log(`[Algorithm Placeholder] Search vector T increment step is ${session.interval_days} days.`);
-
-			// Simulate finding intersection or failing
-			const isSuccess = Math.random() > 0.5;
-
-
+const injectionCode = `
 			if (isSuccess) {
-				console.log(`[Success Path] Found compliant time window. Injecting events to primary calendars.`);
+				console.log(\`[Success Path] Found compliant time window. Injecting events to primary calendars.\`);
 
                 // Actual insertion logic
                 const { decrypt } = await import('./lib/crypto.js');
@@ -73,12 +46,12 @@ export async function scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionC
                                     await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
                                         method: 'POST',
                                         headers: {
-                                            'Authorization': `Bearer ${tokenData.access_token}`,
+                                            'Authorization': \`Bearer \${tokenData.access_token}\`,
                                             'Content-Type': 'application/json'
                                         },
                                         body: JSON.stringify(event)
                                     });
-                                    console.log(`Successfully inserted Google Calendar event for ${token.email}`);
+                                    console.log(\`Successfully inserted Google Calendar event for \${token.email}\`);
                                 } else {
                                     console.error('Failed to get Google access token:', tokenData);
                                 }
@@ -109,31 +82,27 @@ export async function scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionC
                                     await fetch('https://graph.microsoft.com/v1.0/me/events', {
                                         method: 'POST',
                                         headers: {
-                                            'Authorization': `Bearer ${tokenData.access_token}`,
+                                            'Authorization': \`Bearer \${tokenData.access_token}\`,
                                             'Content-Type': 'application/json'
                                         },
                                         body: JSON.stringify(event)
                                     });
-                                    console.log(`Successfully inserted Microsoft Calendar event for ${token.email}`);
+                                    console.log(\`Successfully inserted Microsoft Calendar event for \${token.email}\`);
                                 } else {
                                     console.error('Failed to get Microsoft access token:', tokenData);
                                 }
                             }
                         } catch (e) {
-                            console.error(`Failed to process event for ${token.email}:`, e);
+                            console.error(\`Failed to process event for \${token.email}:\`, e);
                         }
                     }
                 }
 
-			} else {
-				console.log(`[Failure Path] Hit 90-Day Wall. Dispatching cheerful despair mail to participants.`);
-			}
+			} else {`;
 
-			// 4. Complete Ephemeral Purge (Cascade delete will remove participants and tokens)
-			console.log(`Purging session: ${session.id}`);
-			await env.DB.prepare(`DELETE FROM sessions WHERE id = ?`).bind(session.id).run();
-		}
-	} catch (error) {
-		console.error('Error executing cron trigger:', error);
-	}
-}
+content = content.replace(
+  "			if (isSuccess) {\n				console.log(`[Success Path] Found compliant time window. Injecting events to primary calendars.`);\n			} else {",
+  injectionCode
+);
+
+fs.writeFileSync(path, content);

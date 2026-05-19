@@ -15,13 +15,26 @@ env.MICROSOFT_CLIENT_ID ("azuer id")                                      Enviro
 ❓ Your types might be out of date. Re-run `wrangler types` to ensure your types are correct.
 ⎔ Starting local server...
 [wrangler:info] Ready on http://localhost:8787
-[wrangler:info] POST /api/sessions 201 Created (30ms)
-[wrangler:info] POST /api/participants 201 Created (9ms)
-[wrangler:info] POST /api/tokens 201 Created (8ms)
-Cron fired at * * * * *, time: 1779139070856
+[wrangler:info] POST /api/sessions 201 Created (39ms)
+[wrangler:info] POST /api/participants 201 Created (10ms)
+[wrangler:info] POST /api/tokens 201 Created (9ms)
+Cron fired at * * * * *, time: 1779153968484
 Processing expired session: session-123 with interval 14 days
 [Algorithm Placeholder] Executing intersection logic for session session-123 with 1 tokens.
 [Algorithm Placeholder] Search vector T increment step is 14 days.
-[Failure Path] Hit 90-Day Wall. Dispatching cheerful despair mail to participants.
+[Success Path] Found compliant time window. Injecting events to primary calendars.
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mFailed to process event for jules@example.com: DOMException {[0m
+
+    code: 5,
+    name: 'InvalidCharacterError',
+    message: "atob() called with invalid base64-encoded data. (Only whitespace, '+', '/', alphanumeric ASCII, and up to two terminal '=' signs when the input data length is divisible by 4 are allowed.)",
+    stack: "InvalidCharacterError: atob() called with invalid base64-encoded data. (Only whitespace, '+', '/', alphanumeric ASCII, and up to two terminal '=' signs when the input data length is divisible by 4 are allowed.)\n" +
+      '    at decrypt (file:///app/src/lib/crypto.ts:61:3)\n' +
+      '    at async Object.scheduled (file:///app/src/cron.ts:44:50)\n' +
+      '    at async scheduled (file:///app/node_modules/wrangler/templates/middleware/middleware-scheduled.ts:8:3)\n' +
+      '    at async drainBody (file:///app/node_modules/wrangler/templates/middleware/middleware-ensure-req-body-drained.ts:5:10)'
+  }
+
+
 Purging session: session-123
-[wrangler:info] GET /__scheduled 200 OK (19ms)
+[wrangler:info] GET /__scheduled 200 OK (38ms)
